@@ -1,0 +1,27 @@
+[Unit]
+# Sablon birim: baska birimlerin OnFailure= satirindan cagrilir.
+# `%i`, ariza eden birimin adini tasir. Cagiran taraf `%N` kullanir (tur
+# eki olmadan): `%n` verilseydi ornek adi instagram-alert@instagram-
+# scheduler.service.service gibi cift ekli olurdu.
+#
+# Neden var: uygulama birimlerinde Restart=always + RestartSec=10 vardi ama
+# StartLimitBurst ayarli degildi. systemd'nin varsayilani 10 saniyede 5
+# baslatma; RestartSec=10 bu pencereye asla sigmadigi icin hiz siniri hic
+# tetiklenmiyor ve servis HICBIR ZAMAN `failed` durumuna gecmiyordu.
+# Acilista patlayan bir servis sonsuza kadar 10 saniyede bir yeniden
+# basliyor, `systemctl is-active` cogu zaman `active`/`activating` gosteriyor
+# ve bunu fark etmenin tek yolu elle journalctl bakmak oluyordu.
+#
+# Artik StartLimit* ile birim gercekten `failed`'a dusuyor ve bu sablon
+# Telegram'a haber veriyor. Onemli: saglik kontrolu zamanlayici surecinin
+# ICINDE calisiyor, yani o surec ayaga kalkamadiginda zaten susuyor —
+# bu bildirim o koru noktayi kapatan tek mekanizma.
+Description=Instagram Otomasyon - ariza bildirimi (%i)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/instagram-otomasyon
+EnvironmentFile=/opt/instagram-otomasyon/.env
+Environment=TZ=Europe/Istanbul
+ExecStart=/opt/instagram-otomasyon/venv/bin/python main.py --alert %i
+User=appuser

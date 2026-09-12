@@ -1,0 +1,42 @@
+[Unit]
+Description=Instagram Otomasyon - Zamanlayici (collect/process/generate/publish)
+After=network.target
+
+# --- SERTLESTIRME (7 Agustos 2026 denetimi) ---
+# Restart=always + RestartSec=10 vardi ama StartLimit* yoktu. systemd'nin
+# varsayilani 10 saniyede 5 baslatma; RestartSec=10 bu pencereye asla
+# sigmaz, yani hiz siniri HIC tetiklenmiyor ve birim hicbir zaman `failed`
+# durumuna gecmiyordu. Acilista patlayan bir servis sonsuza kadar 10
+# saniyede bir yeniden basliyordu; `systemctl is-active` cogu zaman
+# `active`/`activating` gosterdigi icin fark etmenin tek yolu elle
+# journalctl bakmakti.
+#
+# DIKKAT: bu uc anahtar [Unit] bolumune ait. [Service] icine konursa
+# systemd "Unknown key name ... ignoring" deyip SESSIZCE yok sayar
+# (249 uzerinde dogrulandi).
+StartLimitIntervalSec=600
+StartLimitBurst=5
+OnFailure=instagram-alert@%N.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/instagram-otomasyon
+EnvironmentFile=/opt/instagram-otomasyon/.env
+# Sunucu saat dilimi UTC; iş saatleri (bildirim/paylaşım slotları) ise
+# Türkiye saatine göre tanımlı. TZ verilmezse 09:45 "sabah" bildirimi
+# 12:45'te, 21:00 gönderisi gece yarısında yayınlanıyordu.
+Environment=TZ=Europe/Istanbul
+ExecStart=/opt/instagram-otomasyon/venv/bin/python main.py --run
+Restart=always
+RestartSec=10
+User=appuser
+
+
+# Bellek muhasebesi + tavan: OOM katili SIGKILL gonderir, _safe_run onu
+# yakalayamaz. Tavan olmadan sisen tek bir surec tum VDS'i asagi cekebilir.
+# Olculen kullanim: scheduler 95 MB, digerleri ~30 MB (8 GB RAM).
+MemoryAccounting=yes
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target

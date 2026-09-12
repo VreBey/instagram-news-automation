@@ -1,0 +1,98 @@
+#!/bin/bash
+# Deploy hook'u: gelen master dalini calisma dizinine cikarir ve servisleri yeniler.
+# Elle scp yerine surumlu/geri alinabilir deploy (bkz. sistem denetimi).
+#
+# VDS'teki cip'lak (bare) depoya kurulur:
+#   cp deploy/post-receive <ciplak-depo>.git/hooks/post-receive
+#   chmod +x <ciplak-depo>.git/hooks/post-receive
+#
+# Kullanim (yerelden): git push vds master
+#
+# NOT: Bu dosya 3 Agustos 2026'ya kadar YALNIZCA sunucuda duruyordu, repoda
+# degildi. Sonuc: icindeki servis listesi sessizce eskidi ve instagram-mcp
+# listeye hic eklenmedigi icin MCP sunucusu iki ard arda deploy'u da almadi,
+# eski kodu calistirmaya devam etti. Sunucuda yasayan ama surumlenmeyen
+# yapilandirma tam olarak boyle bozulur -- bu yuzden artik repoda.
+set -e
+
+WORK=${DEPLOY_WORK_TREE:-/opt/instagram-otomasyon}
+
+# Ciplak deponun yolu SABIT YAZILMIYOR: bu betik her zaman
+# <ciplak-depo>/hooks/post-receive olarak calisir, yani yolu kendi
+# konumundan turetebilir. Sabit yazilirsa depo yeniden adlandirildiginda
+# ya da baska bir sunucuya tasindiginda sessizce kirilir -- ve deploy
+# "basarili" gorunurken calisma dizinine hicbir sey cikmaz.
+BARE="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Kod deploy'unda yeniden baslatilacak servisler.
+#
+# instagram-cloudflare-tunnel BILINCLI olarak DISARIDA: o cloudflared'i
+# calistiriyor, bizim kodumuzu degil. Her deploy'da yeniden baslatmak tuneli
+# gereksiz yere dusurur ve panel/MCP birkac saniyeligine erisilemez olur.
+#
+# Yeni bir servis eklerken BURAYA da eklemeyi unutma.
+SERVICES="instagram-scheduler instagram-telegram instagram-dashboard instagram-mcp"
+
+while read -r _old new ref; do
+    [ "$ref" = "refs/heads/master" ] || continue
+
+    echo "--> $WORK dizinine cikariliyor (${new:0:8})"
+    GIT_WORK_TREE="$WORK" GIT_DIR="$BARE" git checkout -f master
+    GIT_WORK_TREE="$WORK" GIT_DIR="$BARE" git clean -fd \
+        -e .env -e data -e logs -e assets -e output -e venv
+
+    chown -R appuser:appuser "$WORK" 2>/dev/null || true
+
+    # systemd birimlerini de senkronla.
+    #
+    # Bu ADIM 7 Agustos 2026'ya kadar YOKTU ve bu dosyanin en ustundeki
+    # dersin aynisini uretiyordu: deploy/systemd/*.service repoda
+    # duzenleniyor, ama canliya HIC kopyalanmiyordu. Yani birim dosyasindaki
+    # her degisiklik sessizce olu kaliyordu -- olcum: instagram-mcp.service'e
+    # eklenen TZ satiri canliya hic ulasmadi. "Yazilan ama okunmayan
+    # yapilandirma" hatasinin altyapi hali.
+    #
+    # `tr -d '\r'`: repo Windows'ta duzenlendigi icin dosyalar CRLF ile
+    # cikiyor; systemd bunu tolere etse de fark her deploy'da gurultu
+    # uretiyor ve gercek degisikligi gizliyor.
+    units_changed=0
+    for unit_src in "$WORK"/deploy/systemd/*.service; do
+        unit_name=$(basename "$unit_src")
+        unit_dst="/etc/systemd/system/$unit_name"
+        tmp=$(mktemp)
+        tr -d '\r' < "$unit_src" > "$tmp"
+        if ! cmp -s "$tmp" "$unit_dst"; then
+            install -m 0644 "$tmp" "$unit_dst"
+            echo "    birim guncellendi: $unit_name"
+            units_changed=1
+        fi
+        rm -f "$tmp"
+    done
+    if [ "$units_changed" -eq 1 ]; then
+        systemctl daemon-reload
+        echo "    systemctl daemon-reload calisti"
+    fi
+
+    echo "--> servisler yeniden baslatiliyor"
+    # shellcheck disable=SC2086  # kelime bolunmesi burada istenen davranis
+    systemctl restart $SERVICES
+    sleep 3
+
+    # Her servisi ADIYLA birlikte yazdir. Eskiden yalnizca "active" satirlari
+    # basiliyordu; hangi satirin hangi servise ait oldugu belli olmadigi icin
+    # eksik servis fark edilmiyordu.
+    failed=0
+    for svc in $SERVICES; do
+        state=$(systemctl is-active "$svc" || true)
+        printf '    %-28s %s\n' "$svc" "$state"
+        [ "$state" = "active" ] || failed=1
+    done
+
+    if [ "$failed" -ne 0 ]; then
+        echo "!! UYARI: en az bir servis ayaga kalkmadi. Kontrol edin:"
+        echo "   journalctl -u <servis> -n 50 --no-pager"
+        exit 1
+    fi
+
+    echo "--> deploy tamam"
+done

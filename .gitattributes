@@ -1,0 +1,10 @@
+# Tüm metin dosyaları depoda LF ile tutulur ve LF ile çıkarılır.
+#
+# Geliştirme Windows'ta, üretim Ubuntu'da. Shell betikleri ve systemd
+# unit'leri CRLF ile Linux'a çıkarsa kabuk ilk satırı `#!/bin/bash\r` diye
+# okur ve "bad interpreter: /bin/bash^M" ile reddeder. Tek kural hepsini
+# kapsar; aşağıdaki üç satır kritik dosyaları açıkça belirtmek için duruyor.
+* text=auto eol=lf
+*.sh text eol=lf
+deploy/post-receive text eol=lf
+*.service text eol=lf

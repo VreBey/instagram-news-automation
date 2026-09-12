@@ -1,0 +1,31 @@
+[Unit]
+Description=Instagram Otomasyon - Cloudflare Named Tunnel
+After=network.target instagram-mcp.service instagram-dashboard.service
+# `Requires=` DEGIL `Wants=`. Requires bir zorunluluk iliskisi: MCP servisi
+# ayaga kalkamazsa (ya da elle durdurulursa) TUNEL DE dusuyordu. Panel ve
+# MCP ayni tunelden gectigi icin, tamamen ilgisiz bir MCP hatasi panelin
+# dis URL'sini de kapatiyordu -- gercek bir tekil ariza noktasi.
+# Wants ile tunel ikisini yine baslatmayi dener ama biri dusunce kendisi
+# ayakta kalir.
+Wants=instagram-mcp.service instagram-dashboard.service
+
+[Service]
+Type=simple
+# Tunel adi kuruluma ozeldir, koda gomulmez -- baskasinin tunel adi bu
+# dosyada durursa depoyu kuran herkes onu calistirmaya calisir.
+# Kendi adinizi vermek icin:
+#   echo 'TUNNEL_NAME=kendi-tunel-adiniz' > /etc/default/instagram-tunnel
+#   systemctl daemon-reload && systemctl restart instagram-cloudflare-tunnel
+# SIRA ONEMLI: EnvironmentFile, Environment'tan SONRA gelmeli ki dosyadaki
+# deger varsayilani ezsin.
+Environment=TUNNEL_NAME=instagram-news
+EnvironmentFile=-/etc/default/instagram-tunnel
+ExecStart=/usr/bin/cloudflared tunnel run ${TUNNEL_NAME}
+Restart=always
+RestartSec=10
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

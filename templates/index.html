@@ -1,0 +1,2319 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ brand_name }} — Yönetim Paneli</title>
+    <meta name="description" content="AI ve Gaming haberleri Instagram otomasyon yönetim paneli">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* Tasarım sistemi: "Signal Logic" — Google Stitch'te tanımlanıp
+           buraya uygulandı. Temel ilke: dekoratif efekt değil, yapısal
+           bütünlük. Degrade yok, yumuşak/geniş gölge yok; hiyerarşi tonal
+           katmanlar ve düşük kontrastlı 1px kenarlıklarla kuruluyor
+           ("yüksek performanslı bir terminal" hissi). */
+        :root {
+            /* Yüzey katmanları — Seviye 0 zemin, 1 kart/sidebar, 2 modal/panel */
+            --bg-primary: #0B0E14;
+            --bg-secondary: #11151F;
+            --bg-card: #171C27;
+            --bg-elevated: #1C2331;
+            --bg-hover: #232A37;
+            --text-primary: #E9EDF4;
+            --text-secondary: #8A94AD;
+            --text-accent: #58A6FF;
+            /* Marka rengi: tek, tutarlı bir sinyal-mavisi — önceden mor+cyan
+               degrade kombinasyonu jenerik "AI dashboard" görünümüne
+               sebep oluyordu (bkz. tasarım denetimi). */
+            --primary: #4C8DFF;
+            --primary-light: #7DAEFF;
+            --secondary: #00D2D3;
+            /* "AI" kategori etiketi kasıtlı olarak genel marka mavisinden
+               (--primary) AYRI bir renk — AI/Gaming ayrımının tablo/rozet
+               genelinde görsel olarak net kalması için. */
+            --category-ai: #A29BFE;
+            --accent: #FF6B6B;
+            --accent-yellow: #FECA57;
+            --success: #2ECC71;
+            --warning: #F39C12;
+            --danger: #E74C3C;
+            --border: #2D3545;
+            --border-elevated: #3E485B;
+            --shadow: rgba(0, 0, 0, 0.4);
+            /* "Organik" değil "mühendislik ürünü" hissi için küçük yarıçaplar */
+            --radius: 8px;
+            --radius-sm: 4px;
+            --radius-badge: 2px;
+            --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+            --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+        }
+
+        /* Tablo başlığı / küçük meta etiketleri — sistem verisini kullanıcı
+           içeriğinden ayıran tipografik sinyal. */
+        .label-caps {
+            font-family: var(--font-body);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .stat-value, .action-btn { font-family: var(--font-display); }
+
+        /* ===== LAYOUT ===== */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-logo .logo-icon {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--bg-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-logo h1 {
+            font-family: var(--font-display);
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+
+        .sidebar-logo span {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: block;
+            font-weight: 400;
+            font-family: var(--font-body);
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-secondary);
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: rgba(76, 141, 255, 0.15);
+            color: var(--primary-light);
+            border-left: 2px solid var(--primary);
+            padding-left: 10px;
+        }
+
+        /* Tek renkli stroke ikonlar — rengi her zaman bulundukları metinden
+           miras alır (currentColor), böylece hover/active durumlarında
+           metinle birlikte değişirler. */
+        .icon {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .icon-sm { width: 14px; height: 14px; stroke-width: 1.9; }
+
+        .nav-link .icon { width: 18px; height: 18px; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: var(--radius-badge);
+            font-family: var(--font-mono);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: 240px;
+            flex: 1;
+            padding: 32px;
+            max-width: 1200px;
+        }
+
+        /* ===== MOBİL ÜST BAR (sadece küçük ekranlarda görünür) ===== */
+        .mobile-topbar {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mobile-topbar .menu-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 20px;
+            line-height: 1;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .mobile-topbar .mobile-title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 99;
+        }
+
+        .sidebar-backdrop.open { display: block; }
+
+        /* ===== KATEGORİZE BÖLÜM BAŞLIĞI (dashboard stat grupları) ===== */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin: 28px 0 12px;
+        }
+        .section-title:first-child { margin-top: 0; }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        /* Kartlar "yüzmez": kaldırma/gölge yerine kenarlık vurgusu (tasarım
+           sistemi: yumuşak geniş yarıçaplı gölgelerden kaçın). */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            position: relative;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-elevated);
+            background: var(--bg-elevated);
+        }
+
+        .stat-card .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Sparkline SADECE gerçek bir zaman serisi olan kartta gösterilir
+           (yayın trendi). Diğer KPI'ların geçmiş verisi tutulmadığı için
+           onlara dekoratif/uydurma bir çizgi eklenmez. */
+        .stat-sparkline {
+            position: absolute;
+            right: 16px;
+            bottom: 14px;
+            width: 48px;
+            height: 24px;
+            overflow: visible;
+        }
+
+        .stat-sparkline polyline {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 1.5;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .stat-card.purple .stat-value { color: var(--primary-light); }
+        .stat-card.cyan .stat-value { color: var(--secondary); }
+        .stat-card.red .stat-value { color: var(--accent); }
+        .stat-card.yellow .stat-value { color: var(--accent-yellow); }
+        .stat-card.green .stat-value { color: var(--success); }
+
+        /* ===== YAYIN TRENDİ GRAFİĞİ ===== */
+        .trend-chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px 20px 16px;
+            margin-bottom: 24px;
+        }
+
+        .trend-chart-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 18px;
+        }
+
+        .trend-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            height: 130px;
+        }
+
+        .trend-bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+        }
+
+        .trend-bar-count {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .trend-bar {
+            width: 100%;
+            max-width: 34px;
+            background: var(--primary);
+            border-radius: 2px 2px 0 0;
+            min-height: 3px;
+            transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .trend-bar { transition: none; }
+        }
+
+        .trend-bar-label {
+            font-family: var(--font-mono);
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .trend-empty {
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .actions-section {
+            margin-bottom: 32px;
+        }
+
+        .actions-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        /* Degrade YOK (tasarım sistemi kuralı) — düz dolgu + net kenarlık.
+           Hover'da kaydırma/gölge yerine tonal kayma kullanılır. */
+        .action-btn.primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .action-btn.primary:hover { background: var(--primary-light); }
+
+        .action-btn.secondary {
+            background: var(--secondary);
+            color: #08131A;
+        }
+        .action-btn.secondary:hover { background: #4BE3E4; }
+
+        .action-btn.warning {
+            background: var(--warning);
+            color: #1A1200;
+        }
+        .action-btn.warning:hover { background: var(--accent-yellow); }
+
+        .action-btn.danger {
+            background: var(--danger);
+            color: #fff;
+        }
+        .action-btn.danger:hover { background: var(--accent); }
+
+        .action-btn.outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .action-btn.outline:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        .action-btn:focus-visible {
+            outline: 2px solid var(--text-accent);
+            outline-offset: 2px;
+        }
+
+        /* Tablo satırı içi kompakt aksiyonlar — tek satırda kalsın diye */
+        .btn-xs {
+            padding: 4px 9px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: nowrap;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .action-btn .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+
+        .action-btn.loading .spinner { display: inline-block; }
+        .action-btn.loading .btn-text { display: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== PROGRESS BARS ===== */
+        .limits-section {
+            margin-bottom: 32px;
+        }
+
+        .limit-bars {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .limit-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+        }
+
+        .limit-card .limit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .limit-card .limit-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .limit-card .limit-count {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-hover);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.purple { background: var(--primary); }
+        .progress-fill.cyan { background: var(--secondary); }
+        .progress-fill.red { background: var(--accent); }
+
+        /* ===== TABLE ===== */
+        .table-section {
+            margin-bottom: 32px;
+        }
+
+        .table-section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        /* Yoğun ama okunabilir satırlar — tasarım sistemi dikey kompaktlığı
+           önceliklendiriyor (yönetim panelinde tarama hızı için). */
+        .data-table td {
+            padding: 9px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .data-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        /* Sistem verisi (skor, tarih, sayı) kullanıcı içeriğinden mono
+           fontla ayrılır. */
+        .data-table .num,
+        .data-table .meta {
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+        .data-table .meta { color: var(--text-secondary); }
+
+        /* ===== BADGES ===== */
+        /* Rozetler yuvarlak "pill" değil, teknik bir etiket gibi: keskin
+           köşe, durum renginin %10 dolgusu + aynı renkte 1px kenarlık. */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 7px;
+            border-radius: var(--radius-badge);
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge.ai { background: rgba(162, 155, 254, 0.1); border-color: rgba(162, 155, 254, 0.4); color: var(--category-ai); }
+        .badge.gaming { background: rgba(0, 210, 211, 0.1); border-color: rgba(0, 210, 211, 0.4); color: var(--secondary); }
+        .badge.post { background: rgba(88, 166, 255, 0.1); border-color: rgba(88, 166, 255, 0.4); color: var(--text-accent); }
+        .badge.story { background: rgba(254, 202, 87, 0.1); border-color: rgba(254, 202, 87, 0.4); color: var(--accent-yellow); }
+        .badge.reels { background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.4); color: var(--accent); }
+        .badge.success { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.4); color: var(--success); }
+        .badge.failed { background: rgba(231, 76, 60, 0.1); border-color: rgba(231, 76, 60, 0.4); color: var(--danger); }
+        .badge.draft { background: rgba(138, 148, 173, 0.1); border-color: rgba(138, 148, 173, 0.35); color: var(--text-secondary); }
+        .badge.approved { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.4); color: var(--success); }
+        .badge.published { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.4); color: var(--success); }
+        .badge.rejected { background: rgba(231, 76, 60, 0.1); border-color: rgba(231, 76, 60, 0.4); color: var(--danger); }
+        .badge.cancelled { background: rgba(138, 148, 173, 0.1); border-color: rgba(138, 148, 173, 0.35); color: var(--text-secondary); }
+        .badge.pending { background: rgba(243, 156, 18, 0.1); border-color: rgba(243, 156, 18, 0.4); color: var(--warning); }
+        .badge.carousel { background: rgba(76, 141, 255, 0.1); border-color: rgba(76, 141, 255, 0.4); color: var(--primary-light); }
+        .badge.source-claude_research { background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.4); color: var(--accent); }
+        .badge.source-gemini_spark { background: rgba(88, 166, 255, 0.1); border-color: rgba(88, 166, 255, 0.4); color: var(--text-accent); }
+        .badge.source-telegram_manual { background: rgba(138, 148, 173, 0.1); border-color: rgba(138, 148, 173, 0.35); color: var(--text-secondary); }
+
+        /* ===== TOAST / NOTIFICATION ===== */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 20px;
+            font-size: 14px;
+            box-shadow: 0 8px 32px var(--shadow);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--danger); }
+        .toast.info { border-left: 3px solid var(--text-accent); }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-elevated);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 4px var(--shadow);
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            margin: 16px;
+            animation: modalPop 0.2s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* ===== İÇERİK ÖNİZLEME MODALI ===== */
+        .modal-box.wide { max-width: 640px; }
+
+        .cp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .cp-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .cp-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .cp-close-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .cp-close-btn:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 2px; }
+
+        .cp-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .cp-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+        }
+
+        .cp-caption-box {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            font-size: 14px;
+            line-height: 1.65;
+            margin-bottom: 18px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .cp-hashtags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+
+        .cp-hashtag-chip {
+            background: rgba(88, 166, 255, 0.14);
+            color: var(--text-accent);
+            padding: 4px 9px;
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .cp-script-segment {
+            border-left: 2px solid var(--primary);
+            padding: 6px 0 6px 12px;
+            margin-bottom: 8px;
+            font-size: 13.5px;
+            color: var(--text-primary);
+        }
+
+        .cp-script-segment .cp-script-label {
+            display: block;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .cp-meta-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+            margin-bottom: 18px;
+        }
+
+        .cp-actions { display: flex; gap: 10px; }
+        .cp-actions .action-btn { flex: 1; justify-content: center; }
+
+        /* ===== İÇERİK ÖNİZLEME DRAWER (modal yerine yan panel) =====
+           Merkezi modal yerine sağdan açılan panel — onay akışının ana
+           çalışma alanı olduğu için "kesin bir işlem" hissi veren modal
+           yerine, listeye dönmenin ucuz olduğu bir yan panel tercih edildi
+           (Linear/Stripe'taki detay paneli deseni). */
+        .drawer-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 6, 10, 0.6);
+            z-index: 2000;
+        }
+
+        .drawer-overlay.open { display: block; }
+
+        .drawer-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: 480px;
+            max-width: 100%;
+            background: var(--bg-elevated);
+            border-left: 1px solid var(--border-elevated);
+            box-shadow: -4px 0 4px var(--shadow);
+            transform: translateX(100%);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            padding: 22px 24px 28px;
+        }
+
+        .drawer-overlay.open .drawer-panel { transform: translateX(0); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .drawer-panel { transition: none; }
+        }
+
+        @media (max-width: 560px) {
+            .drawer-panel { width: 100%; }
+        }
+
+        /* ===== INSTAGRAM ÖNİZLEME MOCKUP'I =====
+           Ham caption/etiket metnini listelemek yerine, içeriğin Instagram'da
+           GERÇEKTE nasıl görüneceğini birebir taklit eden bir kart — sahte
+           beğeni/yorum sayısı UYDURULMAZ, yayınlanmamış içerik için dürüstçe
+           "Henüz yayınlanmadı" yazar. */
+        .ig-icon { display: block; }
+
+        .ig-mock {
+            width: 320px;
+            max-width: 100%;
+            margin: 0 auto 20px;
+            background: #fff;
+            color: #262626;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+        }
+
+        .ig-mock-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+        }
+
+        .ig-mock-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 11px;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        .ig-mock-username { font-weight: 600; font-size: 13.5px; }
+        .ig-mock-meatball { margin-left: auto; font-size: 18px; color: #262626; letter-spacing: 1px; }
+
+        .ig-mock-media {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #f0f0f0;
+        }
+
+        .ig-mock-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .ig-mock-media-empty {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 6px; color: #8e8e8e; font-size: 12.5px; text-align: center; padding: 0 20px;
+        }
+        .ig-mock-media-empty .icon { font-size: 26px; }
+
+        .ig-mock-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 26px; height: 26px; border-radius: 50%;
+            background: rgba(255,255,255,0.85); border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; color: #262626; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        }
+        .ig-mock-nav-btn.prev { left: 8px; }
+        .ig-mock-nav-btn.next { right: 8px; }
+
+        .ig-mock-dots {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 4px;
+        }
+        .ig-mock-dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.55); }
+        .ig-mock-dots span.active { background: #fff; }
+
+        .ig-mock-actions {
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 12px 2px; color: #262626;
+        }
+        .ig-mock-actions .spacer { margin-left: auto; }
+
+        .ig-mock-status {
+            padding: 6px 12px 0;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #8e8e8e;
+        }
+
+        .ig-mock-caption {
+            padding: 6px 12px 4px;
+            font-size: 13.5px;
+            line-height: 1.45;
+            color: #262626;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .ig-mock-caption.expanded { -webkit-line-clamp: unset; }
+        .ig-mock-caption b { font-weight: 600; margin-right: 4px; }
+        .ig-mock-caption .ig-tag { color: #00376b; }
+
+        .ig-mock-time {
+            padding: 2px 12px 13px;
+            font-size: 10px;
+            color: #8e8e8e;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        /* Story ve Reels — dikey telefon çerçevesi */
+        .ig-mock--vertical {
+            width: 220px;
+            aspect-ratio: 9 / 16;
+            background: #000;
+            border-radius: 20px;
+            border: 6px solid #111;
+            position: relative;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+        }
+        .ig-mock--vertical img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .ig-mock-v-empty {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; color: rgba(255,255,255,0.6); font-size: 12px; text-align: center; padding: 0 20px;
+        }
+
+        .ig-mock-story-bars {
+            position: absolute; top: 8px; left: 8px; right: 8px;
+            display: flex; gap: 4px; z-index: 2;
+        }
+        .ig-mock-story-bars span { flex: 1; height: 2px; background: rgba(255,255,255,0.35); border-radius: 2px; }
+        .ig-mock-story-bars span.filled { background: #fff; }
+
+        .ig-mock-story-head {
+            position: absolute; top: 16px; left: 10px; right: 10px;
+            display: flex; align-items: center; gap: 7px; z-index: 2;
+            color: #fff; font-size: 11.5px; font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        .ig-mock-story-avatar {
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 1.5px solid #fff;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8.5px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+
+        .ig-mock-play-circle {
+            position: absolute; inset: 0; margin: auto; width: 56px; height: 56px;
+            border-radius: 50%; background: rgba(0,0,0,0.35);
+            display: flex; align-items: center; justify-content: center; z-index: 2;
+        }
+        .ig-mock-play-circle::after {
+            content: ''; margin-left: 4px;
+            border-style: solid; border-width: 10px 0 10px 17px;
+            border-color: transparent transparent transparent #fff;
+        }
+
+        .ig-mock-reels-rail {
+            position: absolute; right: 8px; bottom: 54px; z-index: 2;
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+            color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+        .ig-mock-reels-rail .rail-count { font-size: 9.5px; font-weight: 600; margin-top: -8px; }
+
+        .ig-mock-reels-caption {
+            position: absolute; left: 10px; right: 46px; bottom: 14px; z-index: 2;
+            color: #fff; font-size: 11.5px; line-height: 1.4;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        }
+
+        /* ===== TABLO ARAMA/FİLTRE/SIRALAMA TOOLBAR'I ===== */
+        .table-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        /* Girdiler zeminle aynı tonda (Seviye 0) — kartın üstünde "oyulmuş"
+           görünsün; odakta parlama/gölge değil, sadece 1px renk değişimi. */
+        .table-toolbar input[type="search"],
+        .table-toolbar select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 13.5px;
+            padding: 8px 11px;
+        }
+
+        .table-toolbar input[type="search"] {
+            flex: 1 1 220px;
+            min-width: 160px;
+        }
+
+        .table-toolbar input[type="search"]:focus,
+        .table-toolbar select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .table-toolbar input[type="search"]:focus-visible,
+        .table-toolbar select:focus-visible {
+            outline: 1px solid var(--primary);
+            outline-offset: 0;
+        }
+
+        .table-toolbar select { flex: 0 0 auto; }
+
+        .table-empty-row td {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 28px 16px !important;
+        }
+
+        /* ===== KPI DELTA ===== */
+        .stat-delta {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .stat-delta.up { color: var(--success); }
+        .stat-delta.down { color: var(--accent); }
+        .stat-delta.flat { color: var(--text-secondary); }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .mobile-topbar { display: flex; }
+
+            /* Sidebar artık gizlenmiyor — ekran dışına kaydırılmış bir
+               çekmece (drawer) oluyor, hamburger butonuyla açılıp kapanıyor.
+               Önceki "display: none" navigasyonu TAMAMEN erişilemez
+               yapıyordu (telefonda sadece ana sayfa görünüyordu). */
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+            }
+            .sidebar.open { transform: translateX(0); }
+
+            .main-content { margin-left: 0; padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .limit-bars { grid-template-columns: 1fr; }
+            .actions-grid { grid-template-columns: repeat(2, 1fr); }
+            .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <!-- MOBİL ÜST BAR — sadece küçük ekranlarda görünür, sidebar çekmecesini açar -->
+    <div class="mobile-topbar">
+        <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menü">☰</button>
+        <span class="mobile-title">{{ brand_name }}</span>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+    <!-- İkon seti — emoji yerine satır içi SVG. Emoji, işletim sistemine göre
+         farklı görünen renkli/çocuksu bir "AI şablonu" izlenimi veriyordu;
+         tek renkli stroke ikonlar arayüzün geri kalanıyla aynı renk sistemini
+         kullanıyor. Satır içi tanım: harici ikon fontu/CDN bağımlılığı yok. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <g id="i-dashboard"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></g>
+            <g id="i-news"><path d="M4 5h13a1 1 0 011 1v13H5a1 1 0 01-1-1z"/><path d="M18 8h2a1 1 0 011 1v9a1 1 0 01-1 1h-2"/><path d="M7 9h7M7 12h7M7 15h4"/></g>
+            <g id="i-content"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 16h5"/></g>
+            <g id="i-publish"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/><path d="M4 21h16"/></g>
+            <g id="i-insights"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></g>
+            <g id="i-research"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></g>
+            <g id="i-ai"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></g>
+            <g id="i-gaming"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18.5 14.5h.01"/></g>
+            <g id="i-post"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M3 16l5-4 4 3 3-2 6 5"/></g>
+            <g id="i-story"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></g>
+            <g id="i-reels"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l2 5M15 4l2 5"/><path d="M11 13l4 2-4 2z"/></g>
+            <g id="i-logout"><path d="M10 4H6a2 2 0 00-2 2v12a2 2 0 002 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/></g>
+            <g id="i-bolt"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></g>
+            <g id="i-pool"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></g>
+        </defs>
+    </svg>
+
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">SS</div>
+                <div>
+                    <h1>{{ brand_name }}<span>AI & Gaming Otomasyon</span></h1>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Genel</div>
+                <a href="/" class="nav-link {% if not page %}active{% endif %}" id="nav-dashboard">
+                    <svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg> Dashboard
+                </a>
+                <a href="/news" class="nav-link {% if page == 'news' %}active{% endif %}" id="nav-news">
+                    <svg class="icon" aria-hidden="true"><use href="#i-news"/></svg> Haberler
+                    {% if stats and stats.unprocessed_news > 0 %}
+                    <span class="nav-badge">{{ stats.unprocessed_news }}</span>
+                    {% endif %}
+                </a>
+                <a href="/content" class="nav-link {% if page == 'content' %}active{% endif %}" id="nav-content">
+                    <svg class="icon" aria-hidden="true"><use href="#i-content"/></svg> İçerikler
+                    {% if stats and stats.draft_content > 0 %}
+                    <span class="nav-badge">{{ stats.draft_content }}</span>
+                    {% endif %}
+                </a>
+                <a href="/history" class="nav-link {% if page == 'history' %}active{% endif %}" id="nav-history">
+                    <svg class="icon" aria-hidden="true"><use href="#i-publish"/></svg> Paylaşım Geçmişi
+                </a>
+                <a href="/insights" class="nav-link {% if page == 'insights' %}active{% endif %}" id="nav-insights">
+                    <svg class="icon" aria-hidden="true"><use href="#i-insights"/></svg> İçgörüler
+                </a>
+                <a href="/research" class="nav-link {% if page == 'research' %}active{% endif %}" id="nav-research">
+                    <svg class="icon" aria-hidden="true"><use href="#i-research"/></svg> Araştırma Bulguları
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Filtreler</div>
+                <a href="/news?category=ai" class="nav-link" id="nav-filter-ai">
+                    <svg class="icon" aria-hidden="true"><use href="#i-ai"/></svg> AI Haberleri
+                </a>
+                <a href="/news?category=gaming" class="nav-link" id="nav-filter-gaming">
+                    <svg class="icon" aria-hidden="true"><use href="#i-gaming"/></svg> Gaming Haberleri
+                </a>
+                <a href="/content?type=post" class="nav-link" id="nav-filter-posts">
+                    <svg class="icon" aria-hidden="true"><use href="#i-post"/></svg> Feed Gönderileri
+                </a>
+                <a href="/content?type=story" class="nav-link" id="nav-filter-stories">
+                    <svg class="icon" aria-hidden="true"><use href="#i-story"/></svg> Hikayeler
+                </a>
+                <a href="/content?type=reels" class="nav-link" id="nav-filter-reels">
+                    <svg class="icon" aria-hidden="true"><use href="#i-reels"/></svg> Reels
+                </a>
+            </div>
+
+            {% if session.get('logged_in') %}
+            <div class="nav-section">
+                <a href="/logout" class="nav-link" id="nav-logout">
+                    <svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg> Çıkış
+                </a>
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            {% if not page %}
+            <!-- ===== DASHBOARD ===== -->
+            <div class="page-header">
+                <h2>Dashboard</h2>
+                <p>{{ now.strftime('%d %B %Y, %H:%M') }} — Sistem durumu ve istatistikler</p>
+            </div>
+
+            {% if token_status and token_status.known and token_status.warning %}
+            <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid var(--danger); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; color: var(--text-primary);">
+                ⚠️ Instagram erişim token'ının süresi
+                {% if token_status.days_remaining is not none and token_status.days_remaining >= 0 %}
+                    <strong>{{ token_status.days_remaining }} gün</strong> içinde doluyor
+                {% else %}
+                    <strong>dolmuş olabilir</strong>
+                {% endif %}
+                ({{ token_status.expires_at[:10] }}). Otomatik yenileme günlük 03:00'te denenir;
+                INSTAGRAM_APP_ID/APP_SECRET yapılandırılı değilse manuel yenilemeniz gerekir.
+            </div>
+            {% endif %}
+
+            <!-- İstatistik Kartları — kategorize (Haber Havuzu / İçerik / Yayın) -->
+            <div class="section-title"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-pool"/></svg>Haber Havuzu</div>
+            <div class="stats-grid">
+                <div class="stat-card purple">
+                    <div class="stat-value">{{ stats.total_news }}</div>
+                    <div class="stat-label">Toplam Haber</div>
+                </div>
+                <div class="stat-card cyan">
+                    <div class="stat-value">{{ stats.today_news }}</div>
+                    <div class="stat-label">Bugünkü Haber</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-value">{{ stats.unprocessed_news }}</div>
+                    <div class="stat-label">İşlenmemiş</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value">{{ stats.news_by_category.get('ai', 0) }}</div>
+                    <div class="stat-label">AI Haberi</div>
+                </div>
+                <div class="stat-card cyan">
+                    <div class="stat-value">{{ stats.news_by_category.get('gaming', 0) }}</div>
+                    <div class="stat-label">Gaming Haberi</div>
+                </div>
+            </div>
+
+            <div class="section-title"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-content"/></svg>İçerik Durumu</div>
+            <div class="stats-grid">
+                <div class="stat-card red">
+                    <div class="stat-value">{{ stats.draft_content }}</div>
+                    <div class="stat-label">Taslak İçerik (toplam)</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value">{{ stats.draft_by_type.get('post', 0) }}</div>
+                    <div class="stat-label">Taslak Post</div>
+                </div>
+                <div class="stat-card cyan">
+                    <div class="stat-value">{{ stats.draft_by_type.get('story', 0) }}</div>
+                    <div class="stat-label">Taslak Hikaye</div>
+                </div>
+            </div>
+
+            <div class="section-title"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-publish"/></svg>Yayın</div>
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="stat-value">{{ stats.today_published }}</div>
+                    <div class="stat-label">Bugün Paylaşılan</div>
+                    {% if daily_publish_trend and daily_publish_trend|length >= 2 %}
+                    {% set _counts = daily_publish_trend | map(attribute='count') | list %}
+                    {% set _delta = _counts[-1] - _counts[-2] %}
+                    <div class="stat-delta {{ 'up' if _delta > 0 else ('down' if _delta < 0 else 'flat') }}">
+                        {% if _delta > 0 %}▲ dünden +{{ _delta }}{% elif _delta < 0 %}▼ dünden {{ _delta }}{% else %}— dün ile aynı{% endif %}
+                    </div>
+                    {% set _peak = _counts | max %}
+                    {# Hepsi sıfırken sparkline düz bir çizgiye dönüşüp
+                       "başıboş bir çizgi" gibi görünüyordu — veri yoksa hiç
+                       çizilmiyor. #}
+                    {% if _peak > 0 %}
+                    {% set _step = 48 / (_counts | length - 1) %}
+                    <svg class="stat-sparkline" viewBox="0 0 48 24" preserveAspectRatio="none"
+                         role="img" aria-label="Son {{ _counts|length }} günlük paylaşım eğilimi">
+                        <polyline points="{% for c in _counts %}{{ (loop.index0 * _step) | round(2) }},{{ (23 - (c / _peak * 22)) | round(2) }} {% endfor %}"></polyline>
+                    </svg>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value">{{ stats.total_published }}</div>
+                    <div class="stat-label">Toplam Paylaşım</div>
+                </div>
+                {% if rate_limit_status %}
+                <div class="stat-card {% if rate_limit_status.remaining <= rate_limit_status.total * 0.2 %}red{% else %}cyan{% endif %}">
+                    <div class="stat-value">{{ rate_limit_status.remaining }}/{{ rate_limit_status.total }}</div>
+                    <div class="stat-label">Instagram Günlük Kota (Kalan)</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if daily_publish_trend %}
+            {% set max_count = daily_publish_trend | map(attribute='count') | max %}
+            <div class="trend-chart-card">
+                <div class="trend-chart-title">Son 7 gün paylaşım trendi</div>
+                {% if max_count > 0 %}
+                <div class="trend-bars">
+                    {% for d in daily_publish_trend %}
+                    <div class="trend-bar-col">
+                        <div class="trend-bar-count">{{ d.count }}</div>
+                        <div class="trend-bar" style="height: {{ (d.count / max_count * 100) | round(1) }}%;"
+                             title="{{ d.day }}: {{ d.count }} paylaşım"></div>
+                        <div class="trend-bar-label">{{ d.day[5:] }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                {# Hepsi sıfırken boş bir eksen çizmek "grafik bozuk" izlenimi
+                   veriyordu — bunun yerine durumu açıkça yazıyoruz. #}
+                <div class="trend-empty">Son 7 günde paylaşım yapılmadı</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Hızlı İşlemler -->
+            <div class="actions-section">
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Hızlı İşlemler</h3>
+                <div class="actions-grid">
+                    <button class="action-btn primary" onclick="runAction('collect', this)" id="btn-collect">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Haber Topla</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="runAction('process', this)" id="btn-process">
+                        <span class="spinner"></span>
+                        <span class="btn-text">İçerik İşle</span>
+                    </button>
+                    <button class="action-btn warning" onclick="runAction('generate', this)" id="btn-generate">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Medya Üret</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="runAction('auto_schedule', this)" id="btn-auto_schedule">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Otomatik Zamanla</span>
+                    </button>
+                    <button class="action-btn danger" onclick="runAction('pipeline', this)" id="btn-pipeline">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Tam Pipeline</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Günlük Limitler -->
+            <div class="limits-section">
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Günlük Paylaşım Limitleri</h3>
+                <div class="limit-bars">
+                    <div class="limit-card">
+                        <div class="limit-header">
+                            <span class="limit-label">Feed Gönderileri</span>
+                            <span class="limit-count">{{ today_counts.get('post', 0) }}/{{ limits.post }}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill purple" style="width: {{ (today_counts.get('post', 0) / limits.post * 100) if limits.post > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="limit-card">
+                        <div class="limit-header">
+                            <span class="limit-label">Hikayeler</span>
+                            <span class="limit-count">{{ today_counts.get('story', 0) }}/{{ limits.story }}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill cyan" style="width: {{ (today_counts.get('story', 0) / limits.story * 100) if limits.story > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="limit-card">
+                        <div class="limit-header">
+                            <span class="limit-label">Reels</span>
+                            <span class="limit-count">{{ today_counts.get('reels', 0) }}/{{ limits.reels }}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill red" style="width: {{ (today_counts.get('reels', 0) / limits.reels * 100) if limits.reels > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Son Paylaşımlar -->
+            <div class="table-section">
+                <h3>Son Paylaşımlar</h3>
+                {% if recent_history %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Tür</th>
+                            <th>Kategori</th>
+                            <th>Başlık</th>
+                            <th>Durum</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_history %}
+                        <tr>
+                            <td><span class="badge {{ item.post_type }}">{{ item.post_type | upper }}</span></td>
+                            <td><span class="badge {{ item.category }}">{{ 'AI' if item.category == 'ai' else 'GAMING' }}</span></td>
+                            <td>{{ item.news_title[:60] }}{% if item.news_title|length > 60 %}...{% endif %}</td>
+                            <td><span class="badge {{ item.status }}">{{ item.status | upper }}</span></td>
+                            <td class="meta">{{ item.published_at[:16] if item.published_at else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <p>Henüz paylaşım geçmişi yok</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif page == 'news' %}
+            <!-- ===== HABERLER ===== -->
+            <div class="page-header">
+                <h2>Haberler</h2>
+                <p>Toplanan haberler listesi {% if category %} — Filtre: {{ 'AI' if category == 'ai' else 'GAMING' }}{% endif %}</p>
+            </div>
+
+            <div class="actions-grid" style="margin-bottom: 24px;">
+                <a href="/news" class="action-btn outline {% if not category %}active{% endif %}">Tümü</a>
+                <a href="/news?category=ai" class="action-btn outline">AI</a>
+                <a href="/news?category=gaming" class="action-btn outline">Gaming</a>
+                <a href="/news?status=unprocessed" class="action-btn outline">İşlenmemiş</a>
+                <a href="/news?status=unused" class="action-btn outline">Kullanılmamış</a>
+            </div>
+
+            {% if items %}
+            <div class="table-toolbar">
+                <input type="search" id="news-search" placeholder="Başlığa göre ara…" oninput="filterTable('news-table')">
+                <select id="news-sort" title="Sıralama" onchange="filterTable('news-table')">
+                    <option value="date-desc">Tarih: Yeni → Eski</option>
+                    <option value="date-asc">Tarih: Eski → Yeni</option>
+                    <option value="score-desc">Skor: Yüksek → Düşük</option>
+                    <option value="score-asc">Skor: Düşük → Yüksek</option>
+                </select>
+            </div>
+            <table class="data-table" id="news-table">
+                <thead>
+                    <tr>
+                        <th>Görsel</th>
+                        <th>Kategori</th>
+                        <th>Başlık</th>
+                        <th>Kaynak</th>
+                        <th>Skor</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr data-title="{{ (item.title or '') | lower | e }}" data-category="{{ item.category }}"
+                        data-score="{{ item.relevance_score if item.relevance_score is not none else -1 }}"
+                        data-date="{{ item.collected_at or '' }}">
+                        <td>
+                            {% if item.image_url %}
+                            <a href="{{ item.image_url }}" target="_blank" title="Kaynak görseli">
+                                <img src="{{ item.image_url }}" alt="Önizleme" loading="lazy"
+                                     style="width:48px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                            </a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><span class="badge {{ item.category }}">{{ 'AI' if item.category == 'ai' else 'GAMING' }}</span></td>
+                        <td>
+                            <a href="{{ item.url }}" target="_blank" style="color: var(--text-accent); text-decoration: none;">
+                                {{ item.title[:80] }}{% if item.title|length > 80 %}...{% endif %}
+                            </a>
+                        </td>
+                        <td class="meta">{{ item.source_name or '-' }}</td>
+                        <td class="num">
+                            {% if item.relevance_score %}
+                            <span style="color: {% if item.relevance_score > 0.7 %}var(--success){% elif item.relevance_score > 0.4 %}var(--warning){% else %}var(--text-secondary){% endif %}">
+                                {{ "%.1f"|format(item.relevance_score) }}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="meta">{{ item.collected_at[:16] if item.collected_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Haber bulunamadı</p>
+            </div>
+            {% endif %}
+
+            {% elif page == 'content' %}
+            <!-- ===== İÇERİKLER ===== -->
+            <div class="page-header">
+                <h2>İçerikler</h2>
+                <p>Oluşturulan taslak içerikler{% if content_type %} — {{ content_type | upper }}{% endif %}</p>
+            </div>
+
+            <div class="actions-grid" style="margin-bottom: 24px;">
+                <a href="/content" class="action-btn outline">Tümü</a>
+                <a href="/content?type=post" class="action-btn outline">Post</a>
+                <a href="/content?type=story" class="action-btn outline">Story</a>
+                <a href="/content?type=reels" class="action-btn outline">Reels</a>
+            </div>
+
+            {% if drafts %}
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 12px;">
+                {% if approval_mode == 'auto' %}
+                Skoru {{ "%.2f"|format(auto_publish_threshold) }} ve üzeri olan, medyası hazır içerikler
+                otomatik zamanlanır — geri kalanı burada manuel onayınızı bekler.
+                {% else %}
+                Sistem şu an <strong>manuel onay modunda</strong> (Telegram'daki gibi) — hiçbir içerik
+                otomatik yayınlanmaz, hepsi burada veya Telegram'dan onayınızı bekler.
+                {% endif %}
+            </p>
+            <div class="table-toolbar">
+                <input type="search" id="content-search" placeholder="Haber başlığına göre ara…" oninput="filterTable('content-table')">
+                <select id="content-category" title="Kategori filtresi" onchange="filterTable('content-table')">
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="ai">AI</option>
+                    <option value="gaming">Gaming</option>
+                </select>
+                <select id="content-sort" title="Sıralama" onchange="filterTable('content-table')">
+                    <option value="score-desc">Skor: Yüksek → Düşük</option>
+                    <option value="score-asc">Skor: Düşük → Yüksek</option>
+                    <option value="date-desc">Tarih: Yeni → Eski</option>
+                    <option value="date-asc">Tarih: Eski → Yeni</option>
+                </select>
+            </div>
+            <table class="data-table" id="content-table">
+                <thead>
+                    <tr>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Haber Başlığı</th>
+                        <th>Kaynak</th>
+                        <th>Skor</th>
+                        <th>Durum</th>
+                        <th>Medya</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in drafts %}
+                    <script type="application/json" id="content-data-{{ d.id }}">{{ d | tojson }}</script>
+                    <tr data-title="{{ (d.news_title or '') | lower | e }}" data-category="{{ d.category }}"
+                        data-score="{{ d.relevance_score if d.relevance_score is not none else -1 }}"
+                        data-date="{{ d.created_at or '' }}">
+                        <td><span class="badge {{ d.content_type }}">{{ d.content_type | upper }}</span></td>
+                        <td><span class="badge {{ d.category }}">{{ 'AI' if d.category == 'ai' else 'GAMING' }}</span></td>
+                        <td>{{ d.news_title[:60] }}{% if d.news_title|length > 60 %}...{% endif %}</td>
+                        <td class="meta">{{ d.source_name or '-' }}</td>
+                        <td class="num">
+                            {% if d.relevance_score %}
+                            <span style="color: {% if d.relevance_score >= auto_publish_threshold %}var(--success){% elif d.relevance_score > 0.4 %}var(--warning){% else %}var(--text-secondary){% endif %}">
+                                {{ "%.2f"|format(d.relevance_score) }}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td><span class="badge {{ d.status }}">{{ d.status | upper }}</span></td>
+                        <td>
+                            {% set thumb = d.thumbnail_path if d.content_type == 'reels' else d.media_path %}
+                            {% if thumb %}
+                            <a href="/media/{{ thumb | basename }}" target="_blank" title="Tam boyutta aç">
+                                <img src="/media/{{ thumb | basename }}" alt="Önizleme"
+                                     style="width:56px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                            </a>
+                            {% if d.carousel_paths and d.carousel_paths|length > 1 %}
+                            <div><span class="badge carousel" style="margin-top:4px; font-size:10px; padding:2px 7px;">{{ d.carousel_paths|length }} SLAYT</span></div>
+                            {% endif %}
+                            {% else %}❌{% endif %}
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="action-btn primary btn-xs"
+                                        onclick="approveContent({{ d.id }})" id="btn-approve-{{ d.id }}">Onayla</button>
+                                <button class="action-btn outline btn-xs"
+                                        onclick="openContentPreview({{ d.id }})" id="btn-preview-{{ d.id }}">Önizle</button>
+                                <button class="action-btn outline btn-xs"
+                                        onclick="rejectContent({{ d.id }})" id="btn-reject-{{ d.id }}">Reddet</button>
+                                {% if d.content_type != 'reels' %}
+                                <button class="action-btn outline btn-xs"
+                                        onclick="openImageModal({{ d.id }})" id="btn-image-{{ d.id }}">Görsel</button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Taslak içerik bulunamadı</p>
+            </div>
+            {% endif %}
+
+            {% elif page == 'history' %}
+            <!-- ===== PAYLAŞIM GEÇMİŞİ ===== -->
+            <div class="page-header">
+                <h2>Paylaşım Geçmişi</h2>
+                <p>Tüm paylaşım kayıtları</p>
+            </div>
+
+            {% if history %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Başlık</th>
+                        <th>Durum</th>
+                        <th>Tarih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr>
+                        <td><span class="badge {{ h.post_type }}">{{ h.post_type | upper }}</span></td>
+                        <td><span class="badge {{ h.category }}">{{ 'AI' if h.category == 'ai' else 'GAMING' }}</span></td>
+                        <td>{{ h.news_title[:60] }}{% if h.news_title|length > 60 %}...{% endif %}</td>
+                        <td><span class="badge {{ h.status }}">{{ h.status | upper }}</span></td>
+                        <td class="meta">{{ h.published_at[:16] if h.published_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Henüz paylaşım geçmişi yok</p>
+            </div>
+            {% endif %}
+
+            {% elif page == 'insights' %}
+            <!-- ===== İÇGÖRÜLER (INSIGHTS) ===== -->
+            <div class="page-header">
+                <h2>İçgörüler</h2>
+                <p>Yayınlanan içeriklerin performansı (impressions, reach, beğeni vb.)</p>
+            </div>
+
+            <div class="actions-grid" style="margin-bottom: 24px;">
+                <button class="action-btn secondary" onclick="runAction('sync_insights', this)" id="btn-sync_insights">
+                    <span class="spinner"></span>
+                    <span class="btn-text">Insights Senkronize Et</span>
+                </button>
+            </div>
+
+            {% if latest_insights %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Başlık</th>
+                        <th>Erişim</th>
+                        <th>Beğeni</th>
+                        <th>Yorum</th>
+                        <th>Etkileşim Oranı</th>
+                        <th>Güncellendi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in latest_insights %}
+                    <tr>
+                        <td><span class="badge {{ i.post_type }}">{{ i.post_type | upper }}</span></td>
+                        <td><span class="badge {{ i.category }}">{{ 'AI' if i.category == 'ai' else 'GAMING' }}</span></td>
+                        <td>{{ i.news_title[:50] }}{% if i.news_title|length > 50 %}...{% endif %}</td>
+                        <td class="num">{{ i.reach or '-' }}</td>
+                        <td class="num">{{ i.likes or '-' }}</td>
+                        <td class="num">{{ i.comments or '-' }}</td>
+                        <td class="num">{{ "%.1f%%"|format(i.engagement_rate * 100) if i.engagement_rate else '-' }}</td>
+                        <td class="meta">{{ i.fetched_at[:16] if i.fetched_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Henüz performans verisi yok — yukarıdaki butonla senkronize edin veya günlük otomatik senkronizasyonu bekleyin.</p>
+            </div>
+            {% endif %}
+
+            {% elif page == 'research' %}
+            <!-- ===== ARAŞTIRMA BULGULARI ===== -->
+            <div class="page-header">
+                <h2>Araştırma Bulguları</h2>
+                <p>Harici ajanların (Claude Research, Gemini Spark, manuel giriş) bulduğu ve pipeline'a eklediği haberler</p>
+            </div>
+
+            {% if findings %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Başlık</th>
+                        <th>Özet</th>
+                        <th>Konu</th>
+                        <th>Kaynak</th>
+                        <th>Alınma Tarihi</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in findings %}
+                    <tr>
+                        <td>{{ f.title[:70] }}{% if f.title|length > 70 %}...{% endif %}</td>
+                        <td style="color: var(--text-secondary); font-size: 13px; max-width: 320px;"
+                            title="{{ f.summary or '' }}">
+                            {{ (f.summary or '-')[:90] }}{% if f.summary and f.summary|length > 90 %}...{% endif %}
+                        </td>
+                        <td class="meta">{{ f.topic or '-' }}</td>
+                        <td>
+                            {% if f.source == 'claude_research' %}
+                            <span class="badge source-claude_research">Claude Research</span>
+                            {% elif f.source == 'gemini_spark' %}
+                            <span class="badge source-gemini_spark">Gemini Spark</span>
+                            {% elif f.source == 'telegram_manual' %}
+                            <span class="badge source-telegram_manual">Manuel</span>
+                            {% else %}
+                            <span class="badge draft">{{ f.source }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="meta">{{ f.received_at[:16] if f.received_at else '-' }}</td>
+                        <td>
+                            {% if f.promoted_news_id %}
+                            <span class="badge published">Aktarıldı</span>
+                            {% else %}
+                            <span class="badge draft">Beklemede</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not f.promoted_news_id %}
+                            <button class="action-btn primary" style="padding: 6px 12px; font-size: 12px;"
+                                    onclick="promoteResearch({{ f.id }}, 'ai')">AI'a Aktar</button>
+                            <button class="action-btn outline" style="padding: 6px 12px; font-size: 12px;"
+                                    onclick="promoteResearch({{ f.id }}, 'gaming')">Gaming'e Aktar</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p>Henüz bir araştırma bulgusu alınmadı.</p>
+            </div>
+            {% endif %}
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- İçerik Önizleme Paneli — Instagram'a gidecek içeriğin GERÇEK
+         görünümünü (sahte etkileşim sayısı olmadan) ve tam metni/etiketleri
+         onaydan önce görebilmek için (kullanıcı geri bildirimi). -->
+    <div class="drawer-overlay" id="content-preview-modal" role="dialog" aria-modal="true" aria-labelledby="cp-title">
+        <div class="drawer-panel">
+            <div class="cp-header">
+                <div class="cp-badges" id="cp-badges"></div>
+                <button type="button" class="cp-close-btn" onclick="closeContentPreview()" aria-label="Kapat">✕</button>
+            </div>
+
+            <h3 class="cp-title" id="cp-title"></h3>
+
+            <div id="cp-ig-mock"></div>
+
+            <div class="cp-section-label" id="cp-caption-label">Açıklama (Caption)</div>
+            <div class="cp-caption-box" id="cp-caption"></div>
+
+            <div id="cp-script-wrap" style="display:none; margin-bottom:18px;">
+                <div class="cp-section-label">Reels Senaryosu</div>
+                <div id="cp-script"></div>
+            </div>
+
+            <div id="cp-hashtags-section" style="display:none;">
+                <div class="cp-section-label">Etiketler</div>
+                <div class="cp-hashtags" id="cp-hashtags"></div>
+            </div>
+
+            <div class="cp-meta-row">
+                <span id="cp-source"></span>
+                <span id="cp-score"></span>
+            </div>
+
+            <div class="cp-actions">
+                <button type="button" class="action-btn primary" onclick="approveFromPreview()">Onayla</button>
+                <button type="button" class="action-btn outline" onclick="rejectFromPreview()">Reddet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- "Farklı Görsel İste" Modalı -->
+    <div class="modal-overlay" id="image-modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 12px;">Gemini Görsel Prompt'u</h3>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                Bu prompt'u Gemini'ye yapıştırıp bir görsel üretin, sonra aşağıdan yükleyin.
+            </p>
+            <textarea id="image-modal-prompt" readonly title="Gemini görsel prompt'u" placeholder="Prompt yükleniyor..."
+                      style="width:100%; min-height:120px; margin-bottom:12px; padding:10px; background:var(--bg-primary); border:1px solid var(--border); border-radius:8px; color:var(--text-primary); font-family:inherit; font-size:13px;"></textarea>
+            <button type="button" class="action-btn outline" style="margin-bottom:20px;" onclick="copyPrompt()">Kopyala</button>
+
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                Ürettiğiniz görseli seçip yükleyin:
+            </p>
+            <input type="file" id="image-modal-file" accept="image/*" title="Görsel dosyası seçin" style="margin-bottom:16px; color: var(--text-primary);">
+
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="action-btn primary" onclick="uploadManualImage()">Yükle</button>
+                <button type="button" class="action-btn outline" onclick="closeImageModal()">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobil sidebar çekmecesi (hamburger menü)
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-backdrop').classList.toggle('open');
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-backdrop').classList.remove('open');
+        }
+
+        // Tablo arama + kategori filtresi + sıralama — veri zaten sunucu
+        // tarafında render edildiği için tamamen istemci tarafında, ek bir
+        // ağ isteği olmadan çalışır. tableId'den "-table" çıkarılıp
+        // "-search"/"-category"/"-sort" eklenerek ilgili kontrol elemanları
+        // bulunur (bkz. content-table / news-table).
+        function filterTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const base = tableId.replace('-table', '');
+            const searchEl = document.getElementById(base + '-search');
+            const categoryEl = document.getElementById(base + '-category');
+            const sortEl = document.getElementById(base + '-sort');
+
+            const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+            const category = categoryEl ? categoryEl.value : '';
+            const sort = sortEl ? sortEl.value : '';
+
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.querySelectorAll('tr[data-title]'));
+
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const matchesSearch = !query || row.dataset.title.includes(query);
+                const matchesCategory = !category || row.dataset.category === category;
+                const show = matchesSearch && matchesCategory;
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            if (sort) {
+                const [field, dir] = sort.split('-');
+                const mul = dir === 'asc' ? 1 : -1;
+                rows.sort((a, b) => {
+                    let av, bv;
+                    if (field === 'score') {
+                        av = parseFloat(a.dataset.score);
+                        bv = parseFloat(b.dataset.score);
+                    } else {
+                        av = a.dataset.date || '';
+                        bv = b.dataset.date || '';
+                    }
+                    if (av < bv) return -1 * mul;
+                    if (av > bv) return 1 * mul;
+                    return 0;
+                });
+                rows.forEach(row => tbody.appendChild(row));
+            }
+
+            let emptyRow = tbody.querySelector('.table-empty-row');
+            if (visibleCount === 0) {
+                if (!emptyRow) {
+                    const colCount = table.querySelectorAll('thead th').length;
+                    emptyRow = document.createElement('tr');
+                    emptyRow.className = 'table-empty-row';
+                    emptyRow.innerHTML = `<td colspan="${colCount}">Eşleşen içerik bulunamadı</td>`;
+                    tbody.appendChild(emptyRow);
+                }
+                emptyRow.style.display = '';
+            } else if (emptyRow) {
+                emptyRow.style.display = 'none';
+            }
+        }
+
+        // Hızlı işlem API çağrıları
+        async function runAction(action, btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/run/${action}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(`✅ ${action} başarıyla tamamlandı!`, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`❌ Hata: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast(`❌ Bağlantı hatası: ${err.message}`, 'error');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // İçerik onaylama
+        async function approveContent(contentId) {
+            try {
+                const response = await fetch(`/api/content/${contentId}/approve`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(`✅ ${data.message}`, 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(`❌ ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast('❌ Onaylama hatası', 'error');
+            }
+        }
+
+        // İçerik reddetme
+        async function rejectContent(contentId) {
+            try {
+                const response = await fetch(`/api/content/${contentId}/reject`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('❌ İçerik reddedildi', 'info');
+                    setTimeout(() => location.reload(), 800);
+                }
+            } catch (err) {
+                showToast('❌ Reddetme hatası', 'error');
+            }
+        }
+
+        // ===== İçerik Önizleme Modalı =====
+        // Instagram'a gidecek gerçek caption/etiket/görsel metnini onaydan
+        // önce tam olarak görebilmek için — veriler her satırın altına
+        // gömülü <script type="application/json"> etiketinden okunuyor,
+        // ayrı bir ağ isteği gerekmiyor (drafts zaten sunucu tarafında
+        // yüklenmişti).
+        let currentPreviewContentId = null;
+
+        function _cpFilename(path) {
+            return path.split(/[\\/]/).pop();
+        }
+
+        function _escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // Caption içindeki #etiket ve @bahsetme kelimelerini Instagram'daki
+        // gibi renklendirir. Metin önce escape edildiği için burada innerHTML
+        // olarak yazmak güvenli.
+        function _igLinkify(text) {
+            return _escapeHtml(text).replace(/(^|\s)([#@][\wçğıöşüÇĞİÖŞÜ_]+)/g, '$1<span class="ig-tag">$2</span>');
+        }
+
+        const IG_ICONS = {
+            heart: '<svg class="ig-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20.5s-7.4-4.4-9.8-8.9C.6 8 2.2 3.8 6.3 3.8c2.1 0 3.7 1.2 4.3 2.7.6-1.5 2.2-2.7 4.3-2.7 4.1 0 5.7 4.2 3.9 7.8-2.2 4.5-9.8 8.9-9.8 8.9z"/></svg>',
+            comment: '<svg class="ig-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.5-.3-3.6-.8L3 20l1.1-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg>',
+            share: '<svg class="ig-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>',
+            bookmark: '<svg class="ig-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-6-4.5L6 21V3z"/></svg>',
+        };
+
+        let _igMockState = { paths: [], index: 0 };
+
+        function _igCycle(delta) {
+            const st = _igMockState;
+            if (!st.paths.length) return;
+            st.index = (st.index + delta + st.paths.length) % st.paths.length;
+            const img = document.getElementById('ig-mock-img');
+            if (img) img.src = '/media/' + _cpFilename(st.paths[st.index]);
+            document.querySelectorAll('#ig-mock-dots span').forEach((dot, i) => {
+                dot.classList.toggle('active', i === st.index);
+            });
+        }
+
+        function _igToggleCaption() {
+            const el = document.getElementById('ig-mock-caption-text');
+            if (el) el.classList.toggle('expanded');
+        }
+
+        // İçeriğin Instagram'da GERÇEKTE nasıl görüneceğini taklit eden kart.
+        // Sahte beğeni/yorum sayısı asla uydurulmaz — bu kuyruktaki her şey
+        // henüz yayınlanmamış taslak olduğu için dürüstçe öyle işaretlenir.
+        function renderInstagramMock(d) {
+            const usernameHtml = '<div class="ig-mock-avatar">{{ ig_initials }}</div><span class="ig-mock-username">{{ ig_username }}</span><span class="ig-mock-meatball">•••</span>';
+
+            if (d.content_type === 'story' || d.content_type === 'reels') {
+                const isReels = d.content_type === 'reels';
+                const mediaPath = isReels ? d.thumbnail_path : d.media_path;
+                const mediaHtml = mediaPath
+                    ? `<img id="ig-mock-img" src="/media/${_cpFilename(mediaPath)}" alt="Önizleme">`
+                    : `<div class="ig-mock-v-empty"><span>Görsel henüz üretilmedi</span></div>`;
+
+                const captionText = isReels ? (d.caption || d.summary_text || '') : '';
+
+                return `
+                    <div class="ig-mock--vertical">
+                        <div class="ig-mock-story-bars">${isReels ? '' : '<span class="filled"></span><span></span>'}</div>
+                        <div class="ig-mock-story-head">
+                            <div class="ig-mock-story-avatar">SS</div>
+                            <span>{{ ig_username }}</span>
+                            <span style="opacity:.75; font-weight:400;">${isReels ? '' : '· şimdi'}</span>
+                        </div>
+                        ${mediaHtml}
+                        ${isReels && mediaPath ? '<div class="ig-mock-play-circle"></div>' : ''}
+                        ${isReels ? `
+                        <div class="ig-mock-reels-rail">
+                            <div>${IG_ICONS.heart}<div class="rail-count">—</div></div>
+                            <div>${IG_ICONS.comment}<div class="rail-count">—</div></div>
+                            <div>${IG_ICONS.share}<div class="rail-count">—</div></div>
+                        </div>` : ''}
+                        ${captionText ? `<div class="ig-mock-reels-caption"><b>{{ ig_username }}</b> ${_igLinkify(captionText.slice(0, 90))}${captionText.length > 90 ? '…' : ''}</div>` : ''}
+                    </div>
+                    <div class="ig-mock-status" style="text-align:center; margin-bottom:16px;">
+                        ${isReels ? 'Reels' : 'Story'} — henüz yayınlanmadı
+                    </div>
+                `;
+            }
+
+            // post (tekli veya carousel)
+            let mediaPaths = [];
+            if (d.carousel_paths && d.carousel_paths.length > 1) {
+                mediaPaths = d.carousel_paths;
+            } else if (d.media_path) {
+                mediaPaths = [d.media_path];
+            }
+            _igMockState = { paths: mediaPaths, index: 0 };
+
+            const mediaInner = mediaPaths.length
+                ? `<img id="ig-mock-img" src="/media/${_cpFilename(mediaPaths[0])}" alt="Önizleme">`
+                : `<div class="ig-mock-media-empty"><span>Görsel henüz üretilmedi</span></div>`;
+
+            const navHtml = mediaPaths.length > 1 ? `
+                <button type="button" class="ig-mock-nav-btn prev" onclick="_igCycle(-1)" aria-label="Önceki slayt">‹</button>
+                <button type="button" class="ig-mock-nav-btn next" onclick="_igCycle(1)" aria-label="Sonraki slayt">›</button>
+                <div class="ig-mock-dots" id="ig-mock-dots">${mediaPaths.map((_, i) => `<span class="${i === 0 ? 'active' : ''}"></span>`).join('')}</div>
+            ` : '';
+
+            const caption = d.caption || d.summary_text || '';
+
+            return `
+                <div class="ig-mock">
+                    <div class="ig-mock-header">${usernameHtml}</div>
+                    <div class="ig-mock-media">${mediaInner}${navHtml}</div>
+                    <div class="ig-mock-actions">
+                        ${IG_ICONS.heart}${IG_ICONS.comment}${IG_ICONS.share}
+                        <span class="spacer"></span>${IG_ICONS.bookmark}
+                    </div>
+                    <div class="ig-mock-status">Henüz yayınlanmadı</div>
+                    ${caption ? `<div class="ig-mock-caption" id="ig-mock-caption-text" onclick="_igToggleCaption()"><b>{{ ig_username }}</b>${_igLinkify(caption)}</div>` : ''}
+                    <div class="ig-mock-time">Şimdi</div>
+                </div>
+            `;
+        }
+
+        function openContentPreview(contentId) {
+            const dataEl = document.getElementById('content-data-' + contentId);
+            if (!dataEl) return;
+            const d = JSON.parse(dataEl.textContent);
+            currentPreviewContentId = contentId;
+
+            const typeLabels = { post: 'POST', story: 'STORY', reels: 'REELS' };
+            const badges = document.getElementById('cp-badges');
+            badges.innerHTML = '';
+            const typeBadge = document.createElement('span');
+            typeBadge.className = 'badge ' + d.content_type;
+            typeBadge.textContent = typeLabels[d.content_type] || d.content_type.toUpperCase();
+            badges.appendChild(typeBadge);
+
+            const catBadge = document.createElement('span');
+            catBadge.className = 'badge ' + d.category;
+            catBadge.textContent = d.category === 'ai' ? 'AI' : 'GAMING';
+            badges.appendChild(catBadge);
+
+            document.getElementById('cp-title').textContent = d.news_title || '(başlıksız)';
+
+            // Instagram'da GERÇEKTE nasıl görüneceğini taklit eden mockup —
+            // ham dosya listesi yerine asıl önizleme burası.
+            if (d.carousel_paths && d.carousel_paths.length > 1) {
+                const carouselBadge = document.createElement('span');
+                carouselBadge.className = 'badge carousel';
+                carouselBadge.textContent = d.carousel_paths.length + ' SLAYT';
+                badges.appendChild(carouselBadge);
+            }
+            document.getElementById('cp-ig-mock').innerHTML = renderInstagramMock(d);
+
+            // Caption / hikaye metni — story'nin ayrı bir caption'ı yok,
+            // summary_text görsele basılan başlık metnidir.
+            const captionLabel = document.getElementById('cp-caption-label');
+            const captionBox = document.getElementById('cp-caption');
+            if (d.caption) {
+                captionLabel.textContent = 'Açıklama (Caption)';
+                captionBox.textContent = d.caption;
+            } else if (d.summary_text) {
+                captionLabel.textContent = 'Görsele Basılan Metin';
+                captionBox.textContent = d.summary_text;
+            } else {
+                captionLabel.textContent = 'Açıklama (Caption)';
+                captionBox.textContent = '(metin bulunamadı)';
+            }
+
+            // Reels senaryosu (varsa) — intro/segment/outro dökümü
+            const scriptWrap = document.getElementById('cp-script-wrap');
+            const scriptBox = document.getElementById('cp-script');
+            if (d.reels_script && (d.reels_script.intro || (d.reels_script.segments || []).length)) {
+                scriptWrap.style.display = '';
+                scriptBox.innerHTML = '';
+                const addSegment = (label, text) => {
+                    if (!text) return;
+                    const seg = document.createElement('div');
+                    seg.className = 'cp-script-segment';
+                    const lbl = document.createElement('span');
+                    lbl.className = 'cp-script-label';
+                    lbl.textContent = label;
+                    seg.appendChild(lbl);
+                    seg.appendChild(document.createTextNode(text));
+                    scriptBox.appendChild(seg);
+                };
+                addSegment('Giriş', d.reels_script.intro);
+                (d.reels_script.segments || []).forEach((s, i) => addSegment('Segment ' + (i + 1), s));
+                addSegment('Kapanış', d.reels_script.outro);
+            } else {
+                scriptWrap.style.display = 'none';
+            }
+
+            // Hashtag'ler
+            const hashtagsSection = document.getElementById('cp-hashtags-section');
+            const hashtagsBox = document.getElementById('cp-hashtags');
+            hashtagsBox.innerHTML = '';
+            if (d.hashtags && d.hashtags.length) {
+                hashtagsSection.style.display = '';
+                d.hashtags.forEach(tag => {
+                    const chip = document.createElement('span');
+                    chip.className = 'cp-hashtag-chip';
+                    chip.textContent = tag.startsWith('#') ? tag : '#' + tag;
+                    hashtagsBox.appendChild(chip);
+                });
+            } else {
+                hashtagsSection.style.display = 'none';
+            }
+
+            document.getElementById('cp-source').textContent = '📰 ' + (d.source_name || 'Kaynak bilinmiyor');
+            document.getElementById('cp-score').textContent = (d.relevance_score !== null && d.relevance_score !== undefined)
+                ? ('Skor: ' + Number(d.relevance_score).toFixed(2))
+                : '';
+
+            document.getElementById('content-preview-modal').classList.add('open');
+        }
+
+        function closeContentPreview() {
+            document.getElementById('content-preview-modal').classList.remove('open');
+            currentPreviewContentId = null;
+        }
+
+        function approveFromPreview() {
+            if (currentPreviewContentId !== null) {
+                approveContent(currentPreviewContentId);
+                closeContentPreview();
+            }
+        }
+
+        function rejectFromPreview() {
+            if (currentPreviewContentId !== null) {
+                rejectContent(currentPreviewContentId);
+                closeContentPreview();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeContentPreview();
+                closeImageModal();
+            }
+        });
+
+        document.getElementById('content-preview-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'content-preview-modal') closeContentPreview();
+        });
+
+        // Araştırma bulgusunu haberlere aktarma
+        async function promoteResearch(researchId, category) {
+            try {
+                const response = await fetch(`/api/research/${researchId}/promote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('✅ Haberlere aktarıldı', 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(`❌ ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast('❌ Aktarma hatası', 'error');
+            }
+        }
+
+        // "🎨 Farklı Görsel İste" modalı
+        let currentImageModalContentId = null;
+
+        async function openImageModal(contentId) {
+            currentImageModalContentId = contentId;
+            const modal = document.getElementById('image-modal');
+            const promptBox = document.getElementById('image-modal-prompt');
+            const fileInput = document.getElementById('image-modal-file');
+            fileInput.value = '';
+            promptBox.value = 'Yükleniyor...';
+            modal.style.display = 'flex';
+
+            try {
+                const response = await fetch(`/api/content/${contentId}/image_prompt`);
+                const data = await response.json();
+                if (data.success) {
+                    promptBox.value = data.prompt;
+                } else {
+                    promptBox.value = '';
+                    showToast(`❌ ${data.error}`, 'error');
+                }
+            } catch (err) {
+                promptBox.value = '';
+                showToast('❌ Prompt alınamadı', 'error');
+            }
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').style.display = 'none';
+            currentImageModalContentId = null;
+        }
+
+        function copyPrompt() {
+            const promptBox = document.getElementById('image-modal-prompt');
+            promptBox.select();
+            navigator.clipboard.writeText(promptBox.value).then(() => {
+                showToast('📋 Prompt kopyalandı', 'success');
+            }).catch(() => {
+                showToast('❌ Kopyalanamadı, elle seçip kopyalayın', 'error');
+            });
+        }
+
+        async function uploadManualImage() {
+            const contentId = currentImageModalContentId;
+            const fileInput = document.getElementById('image-modal-file');
+            if (!fileInput.files.length) {
+                showToast('⚠️ Önce bir görsel seçin', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            try {
+                const response = await fetch(`/api/content/${contentId}/upload_image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('✅ Görsel uygulandı', 'success');
+                    closeImageModal();
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(`❌ ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast('❌ Yükleme hatası', 'error');
+            }
+        }
+
+        // Toast bildirimi
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

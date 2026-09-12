@@ -1,0 +1,44 @@
+# Instagram AI & Gaming News Otomasyon - Bağımlılıklar
+#
+# Sürümler bilinçli olarak TAM (==) pinlenmiştir — bu proje şu an bu
+# sürümlerle test edilip doğrulanmıştır. Açık uçlu (>=) sürümler, VDS gibi
+# farklı bir makinede aylar sonra `pip install` çalıştırıldığında farklı
+# (ve test edilmemiş, potansiyel olarak uyumsuz) sürümler çekebilir. Bilinçli
+# bir yükseltme yapmak isterseniz, önce yerelde test edip sonra buradaki
+# sürümü güncelleyin — VDS'te "körlemesine" yükseltmeyin.
+
+# Haber Toplama
+requests==2.34.2
+feedparser==6.0.12
+
+# AI İçerik İşleme
+google-genai==2.10.0
+
+# Görsel Üretimi
+Pillow==12.3.0
+
+# Video Üretimi (Reels)
+# NOT: MoviePy 2.0, moviepy.editor modülünü kaldırdı ve set_duration/set_audio/
+# crossfadein/volumex/subclip gibi metotları with_* olarak yeniden adlandırdı.
+# video_generator.py hâlâ 1.x API'sini kullanıyor, bu yüzden <2.0 ile pinlendi.
+moviepy==1.0.3
+edge-tts==7.2.8
+
+# Medya Barındırma
+cloudinary==1.45.0
+
+# MCP Sunucusu (Gemini Spark / harici araştırma köprüsü)
+mcp==1.28.1
+
+# Zamanlama
+schedule==1.2.2
+
+# Web Dashboard
+flask==3.1.3
+# Üretim WSGI sunucusu — Flask'ın geliştirme sunucusu üretimde kullanılmaz.
+# gunicorn yerine waitress: saf Python ve Windows'ta da çalışıyor
+# (geliştirme bu projede Windows'ta yapılıyor).
+waitress==3.0.2
+
+# Konfigürasyon
+python-dotenv==1.2.2

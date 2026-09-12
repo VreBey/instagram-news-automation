@@ -1,0 +1,68 @@
+# Environment
+.env
+# .env yedekleri de sır içerir. Token yenileme akışı (scripts/setup_instagram_token.py
+# ve elle yapılan rotasyonlar) .env.bak* dosyaları üretiyor; bunlar ESKİ token'ı
+# taşıyor ve eski token yenisi üretilince otomatik geçersiz olmuyor.
+# 4 Ağustos 2026'da .env.bak.instagram takip edilmemiş ama yoksayılmamış
+# durumdaydı — bir `git add -A` onu depoya sokabilirdi.
+.env.bak*
+.env.*.bak
+*.env.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Output
+output/posts/*
+output/stories/*
+output/reels/*
+!output/posts/.gitkeep
+!output/stories/.gitkeep
+!output/reels/.gitkeep
+
+# Görsel önbellekleri (Pexels/makale/manuel görseller — çalışma zamanında
+# otomatik indirilir/oluşturulur, kaynak kod değil, deponun şişmesini önler)
+assets/stock_cache/*
+assets/article_cache/*
+assets/manual_cache/*
+assets/game_cover_cache/*
+!assets/stock_cache/.gitkeep
+!assets/article_cache/.gitkeep
+!assets/manual_cache/.gitkeep
+!assets/game_cover_cache/.gitkeep
+
+# Marka logoları — KİŞİYE ÖZEL, depoda durmaz.
+# 12 Eylül 2026'ya kadar takip ediliyorlardı; depoyu klonlayan herkes
+# başkasının markasını üretilen görsellere basmış olurdu. Kod logo yoksa
+# sessizce logosuz üretir (src/image_generator.py'deki `path.exists()`),
+# yani eksikliği bir şeyi bozmaz. Kendi logolarınızı buraya koyun:
+#   logo_horizontal.png  — üst/alt bar (şeffaf)
+#   logo_mark.png        — Reels/story rozeti
+assets/logos/*
+!assets/logos/.gitkeep
+
+# Database
+data/*.db
+# Yedekler — `data/*.db` yalnızca üst seviyeyi yakalar, alt dizini yakalamaz.
+data/backups/
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude Code yerel araç ayarları — ürünün parçası değil
+.claude/
+skills-lock.json
